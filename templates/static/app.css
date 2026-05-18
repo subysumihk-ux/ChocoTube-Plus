@@ -536,16 +536,22 @@ main {
 }
 
 /* ===== RESPONSIVE ===== */
+@media (max-width: 860px) {
+  .header-nav-link span { display: none; }
+  .header-inner { gap: 0.9rem; }
+}
+
 @media (max-width: 600px) {
-  .header-inner { gap: 0.8rem; }
+  .header-inner { gap: 0.6rem; }
   .logo { font-size: 1.2rem; }
   .video-grid { grid-template-columns: 1fr; }
-  .header-nav-link span { display: none; }
+  .header-nav { gap: 0.25rem; }
 }
 
 /* ===== SEARCH WRAPPER ===== */
 .search-wrapper {
   flex: 1;
+  min-width: 0;
   max-width: 620px;
   position: relative;
 }
