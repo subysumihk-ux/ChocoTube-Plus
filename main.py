@@ -58,21 +58,26 @@ async def proxy_parallel(category: str, invidious_path: str, exclude_list: list 
     tasks = [asyncio.create_task(_try_instance(base, invidious_path)) for base in instances]
     errors = []
     pending = set(tasks)
+    winner = None
     try:
         while pending:
             done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
             for task in done:
                 exc = task.exception()
-                if exc is None:
-                    for t in pending:
-                        t.cancel()
-                    return task.result()
-                else:
+                if exc is None and winner is None:
+                    winner = task.result()
+                elif exc is not None:
                     errors.append(str(exc))
+            if winner is not None:
+                break
     finally:
         for t in pending:
             t.cancel()
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
 
+    if winner is not None:
+        return winner
     raise Exception("All instances failed: " + ", ".join(errors))
 
 
@@ -80,13 +85,16 @@ def map_path(app_path: str) -> tuple:
     """Map an app API path to (category, invidious_path)."""
 
     # /api/trending/music|gaming|news|movies
-    m = re.match(r"^/api/trending/(music|gaming|news|movies)(.*)", app_path, re.IGNORECASE)
+    m = re.match(r"^/api/trending/(music|gaming|news|movies)([?].*)?$", app_path, re.IGNORECASE)
     if m:
         type_name = m.group(1).lower()
-        rest = m.group(2) or ""
+        qs_part = m.group(2) or ""
         type_map = {"music": "Music", "gaming": "Gaming", "news": "News", "movies": "Movies"}
-        sep = "&" if "?" in rest else "?"
-        return f"trending_{type_name}", f"/api/v1/trending{rest}{sep}type={type_map[type_name]}"
+        if qs_part:
+            invidious_path = f"/api/v1/trending{qs_part}&type={type_map[type_name]}"
+        else:
+            invidious_path = f"/api/v1/trending?type={type_map[type_name]}"
+        return f"trending_{type_name}", invidious_path
 
     # /api/stream/:id → video category → /api/v1/videos/:id
     m = re.match(r"^/api/stream/([^?]+)(.*)", app_path)
@@ -134,7 +142,7 @@ def map_path(app_path: str) -> tuple:
 @app.get("/proxy/main/{path:path}")
 async def proxy_main(path: str, request: Request):
     try:
-        qs = str(request.query_params)
+        qs = request.url.query
         app_path = "/" + path + ("?" + qs if qs else "")
         category, invidious_path = map_path(app_path)
         result = await proxy_parallel(category, invidious_path)
@@ -297,4 +305,4 @@ async def choco_chat_new():
 
 # ── Static files & catch-all ─────────────────────────────────────────────────
 
-app.mount("/", StaticFiles(directory="templates/static"), name="static")
+app.mount("/static", StaticFiles(directory="templates/static"), name="static")
