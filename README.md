@@ -1,4 +1,4 @@
-# Inv-tube
+# Choco-tube-plus
 
 YouTubeのプライバシーに配慮したフロントエンド。<br>
 Invidious APIを複数インスタンスに並列リクエストして高速・安定した動画視聴体験を提供する。
