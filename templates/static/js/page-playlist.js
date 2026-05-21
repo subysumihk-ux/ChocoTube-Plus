@@ -38,7 +38,7 @@ function renderPlaylist(data, page) {
   videosPerPage = data.videos ? data.videos.length : 100;
   const videos = data.videos || [];
 
-  document.title = `${data.title || '再生リスト'} — Inv-tube`;
+  document.title = `${data.title || '再生リスト'} — Choco-tube-plus`;
 
   renderHeader(data);
   renderGrid(videos, data);
@@ -89,6 +89,10 @@ function renderHeader(data) {
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         YouTubeで開く
       </a>
+      <button class="pl-fav-btn${isFavoritePlaylist(playlistId) ? ' active' : ''}" id="plFavBtn" title="お気に入りに追加">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${isFavoritePlaylist(playlistId) ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span id="plFavBtnLabel">${isFavoritePlaylist(playlistId) ? 'お気に入り済み' : 'お気に入り'}</span>
+      </button>
     </div>
   `;
 
@@ -98,6 +102,33 @@ function renderHeader(data) {
     toggleBtn.addEventListener('click', () => {
       const expanded = descEl.classList.toggle('expanded');
       toggleBtn.textContent = expanded ? '閉じる' : 'もっと見る';
+    });
+  }
+
+  const favBtn = headerEl.querySelector('#plFavBtn');
+  if (favBtn) {
+    favBtn.addEventListener('click', () => {
+      const thumb = data.playlistThumbnail ||
+        (data.videos && data.videos[0]?.videoId ? getThumbnailUrl(data.videos[0].videoId) : '');
+      const plData = {
+        playlistId,
+        title: data.title || '',
+        thumbnail: thumb,
+        videoCount: data.videoCount ?? null,
+        author: data.author || ''
+      };
+      const added = toggleFavoritePlaylist(plData);
+      const svg = favBtn.querySelector('svg');
+      const label = favBtn.querySelector('#plFavBtnLabel');
+      if (added) {
+        favBtn.classList.add('active');
+        if (svg) svg.setAttribute('fill', 'currentColor');
+        if (label) label.textContent = 'お気に入り済み';
+      } else {
+        favBtn.classList.remove('active');
+        if (svg) svg.setAttribute('fill', 'none');
+        if (label) label.textContent = 'お気に入り';
+      }
     });
   }
 }
