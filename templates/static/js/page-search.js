@@ -53,7 +53,7 @@ function pushState(filters) {
   if (filters.features) p.set('features', filters.features);
   if (filters.region && filters.region !== 'JP') p.set('region', filters.region);
   history.pushState(null, '', `/search?${p.toString()}`);
-  document.title = filters.q ? `${filters.q} — Inv-tube` : '検索 — Inv-tube';
+  document.title = filters.q ? `${filters.q} — Choco-tube-plus` : '検索 — Choco-tube-plus';
 }
 
 function showResultLoading() {
@@ -352,7 +352,7 @@ function restoreFilters() {
     updateFeaturesLabel();
   }
 
-  if (q) document.title = `${q} — Inv-tube`;
+  if (q) document.title = `${q} — Choco-tube-plus`;
 }
 
 function bindEvents() {
