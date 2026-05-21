@@ -1,10 +1,10 @@
 /* ===== LIBRARY: Subscriptions & History ===== */
 
-const LIB_SUBS_KEY = 'invtube_subs';
-const LIB_HIST_KEY = 'invtube_history';
+const LIB_SUBS_KEY = 'chocotube_subs';
+const LIB_HIST_KEY = 'chocotube_history';
 const LIB_HIST_MAX = 1000;
 
-const SEARCH_HIST_KEY = 'invtube_search_history';
+const SEARCH_HIST_KEY = 'chocotube_search_history';
 const SEARCH_HIST_MAX = 20;
 
 function getSearchHistory() {
@@ -68,13 +68,15 @@ function exportLibrary() {
     subscriptions: getSubscriptions(),
     history: getHistory(),
     playlists: getPlaylists(),
-    favorites: getFavorites()
+    favorites: getFavorites(),
+    favPlaylists: getFavoritePlaylists(),
+    favMixes: getFavoriteMixes()
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `invtube-library-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `chocotube-library-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -111,6 +113,18 @@ function importLibrary(file) {
           const merged = [...existing, ...data.favorites.filter(v => !ids.has(v.videoId))];
           localStorage.setItem(LIB_FAV_KEY, JSON.stringify(merged));
         }
+        if (data.favPlaylists && Array.isArray(data.favPlaylists)) {
+          const existing = getFavoritePlaylists();
+          const ids = new Set(existing.map(p => p.playlistId));
+          const merged = [...existing, ...data.favPlaylists.filter(p => !ids.has(p.playlistId))];
+          localStorage.setItem(LIB_FAV_PL_KEY, JSON.stringify(merged));
+        }
+        if (data.favMixes && Array.isArray(data.favMixes)) {
+          const existing = getFavoriteMixes();
+          const ids = new Set(existing.map(m => m.mixId));
+          const merged = [...existing, ...data.favMixes.filter(m => !ids.has(m.mixId))];
+          localStorage.setItem(LIB_FAV_MIX_KEY, JSON.stringify(merged));
+        }
         resolve();
       } catch (err) { reject(err); }
     };
@@ -121,7 +135,7 @@ function importLibrary(file) {
 
 /* ===== FAVORITES ===== */
 
-const LIB_FAV_KEY = 'invtube_favorites';
+const LIB_FAV_KEY = 'chocotube_favorites';
 
 function getFavorites() {
   try { return JSON.parse(localStorage.getItem(LIB_FAV_KEY) || '[]'); } catch { return []; }
@@ -150,9 +164,71 @@ function removeFavorite(videoId) {
   localStorage.setItem(LIB_FAV_KEY, JSON.stringify(favs));
 }
 
+/* ===== FAVORITES: PLAYLISTS ===== */
+
+const LIB_FAV_PL_KEY = 'chocotube_fav_playlists';
+
+function getFavoritePlaylists() {
+  try { return JSON.parse(localStorage.getItem(LIB_FAV_PL_KEY) || '[]'); } catch { return []; }
+}
+
+function isFavoritePlaylist(playlistId) {
+  return getFavoritePlaylists().some(p => p.playlistId === playlistId);
+}
+
+function toggleFavoritePlaylist(pl) {
+  const favs = getFavoritePlaylists();
+  const idx = favs.findIndex(p => p.playlistId === pl.playlistId);
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+    localStorage.setItem(LIB_FAV_PL_KEY, JSON.stringify(favs));
+    return false;
+  } else {
+    favs.unshift({ ...pl, favoritedAt: Date.now() });
+    localStorage.setItem(LIB_FAV_PL_KEY, JSON.stringify(favs));
+    return true;
+  }
+}
+
+function removeFavoritePlaylist(playlistId) {
+  const favs = getFavoritePlaylists().filter(p => p.playlistId !== playlistId);
+  localStorage.setItem(LIB_FAV_PL_KEY, JSON.stringify(favs));
+}
+
+/* ===== FAVORITES: MIXES ===== */
+
+const LIB_FAV_MIX_KEY = 'chocotube_fav_mixes';
+
+function getFavoriteMixes() {
+  try { return JSON.parse(localStorage.getItem(LIB_FAV_MIX_KEY) || '[]'); } catch { return []; }
+}
+
+function isFavoriteMix(mixId) {
+  return getFavoriteMixes().some(m => m.mixId === mixId);
+}
+
+function toggleFavoriteMix(mix) {
+  const favs = getFavoriteMixes();
+  const idx = favs.findIndex(m => m.mixId === mix.mixId);
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+    localStorage.setItem(LIB_FAV_MIX_KEY, JSON.stringify(favs));
+    return false;
+  } else {
+    favs.unshift({ ...mix, favoritedAt: Date.now() });
+    localStorage.setItem(LIB_FAV_MIX_KEY, JSON.stringify(favs));
+    return true;
+  }
+}
+
+function removeFavoriteMix(mixId) {
+  const favs = getFavoriteMixes().filter(m => m.mixId !== mixId);
+  localStorage.setItem(LIB_FAV_MIX_KEY, JSON.stringify(favs));
+}
+
 /* ===== SETTINGS ===== */
 
-const LIB_SETTINGS_KEY = 'invtube_settings';
+const LIB_SETTINGS_KEY = 'chocotube_settings';
 
 function getSettings() {
   const defaults = { defaultSpeed: 1, loop: false, autoplayNext: false, defaultVolume: 100 };
@@ -166,7 +242,7 @@ function saveSettings(s) {
 
 /* ===== PLAYLISTS ===== */
 
-const LIB_PL_KEY = 'invtube_playlists';
+const LIB_PL_KEY = 'chocotube_playlists';
 
 function getPlaylists() {
   try { return JSON.parse(localStorage.getItem(LIB_PL_KEY) || '[]'); } catch { return []; }
