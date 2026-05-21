@@ -26,7 +26,7 @@ async function loadChannelInfo() {
     const data = await fetchMain(`/api/channels/${encodeURIComponent(channelId)}`);
     channelInfo = data;
     renderChannelHero(data);
-    document.title = `${data.author || 'チャンネル'} — Inv-tube`;
+    document.title = `${data.author || 'チャンネル'} — Choco-tube-plus`;
   } catch (e) {
     document.getElementById('channelHeroSkeleton').innerHTML =
       `<div class="error-state"><div class="error-icon">⚠️</div><p>チャンネル情報の取得に失敗しました。</p></div>`;
