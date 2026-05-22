@@ -1,14 +1,17 @@
 function createVideoCard(video, { forceShorts = false } = {}) {
-  const thumb = getThumbnailUrl(video.videoId);
+  const hasVideoId = !!video.videoId;
+  const thumb = hasVideoId ? getThumbnailUrl(video.videoId) : null;
   const duration = formatDuration(video.lengthSeconds);
   const views = formatViews(video.viewCount);
   const channelIcon = getChannelIconUrl(video.authorThumbnails);
 
   const isShort = forceShorts || isShortVideo(video);
 
-  const a = document.createElement('a');
-  a.className = 'video-card';
-  a.href = isShort ? `/shorts/${video.videoId}` : `/watch?v=${video.videoId}`;
+  const el = hasVideoId ? document.createElement('a') : document.createElement('div');
+  el.className = 'video-card' + (hasVideoId ? '' : ' video-card--no-id');
+  if (hasVideoId) {
+    el.href = isShort ? `/shorts/${video.videoId}` : `/watch?v=${video.videoId}`;
+  }
 
   const badges = [];
   const isLive = video.liveNow || video.publishedText === '0 seconds ago';
@@ -20,9 +23,12 @@ function createVideoCard(video, { forceShorts = false } = {}) {
 
   const channelUrl = video.authorId ? `/channel?id=${encodeURIComponent(video.authorId)}` : null;
 
-  a.innerHTML = `
+  el.innerHTML = `
     <div class="thumb-wrap">
-      <img class="thumb-img" src="${thumb}" alt="${escapeHtml(video.title)}" loading="lazy" onload="this.classList.add('loaded')" />
+      ${thumb
+        ? `<img class="thumb-img" src="${thumb}" alt="${escapeHtml(video.title)}" loading="lazy" onload="this.classList.add('loaded')" />`
+        : `<div class="thumb-img thumb-placeholder"><span class="thumb-placeholder-icon">▶</span></div>`
+      }
       ${duration ? `<span class="duration-badge">${duration}</span>` : ''}
       ${badges.length ? `<div class="thumb-badges">${badges.join('')}</div>` : ''}
     </div>
@@ -48,7 +54,7 @@ function createVideoCard(video, { forceShorts = false } = {}) {
   `;
 
   if (channelUrl) {
-    const iconEl = a.querySelector('.channel-icon, .channel-icon-placeholder');
+    const iconEl = el.querySelector('.channel-icon, .channel-icon-placeholder');
     if (iconEl) {
       iconEl.style.cursor = 'pointer';
       iconEl.addEventListener('click', (e) => {
@@ -59,7 +65,7 @@ function createVideoCard(video, { forceShorts = false } = {}) {
     }
   }
 
-  return a;
+  return el;
 }
 
 function createChannelCard(item) {
@@ -222,6 +228,7 @@ async function fetchChannelAvatar(channelId) {
     channelAvatarCache.set(channelId, thumbs);
     return thumbs;
   } catch {
+    channelAvatarCache.set(channelId, null);
     return null;
   }
 }
@@ -234,6 +241,7 @@ async function fetchPlaylistAuthorThumbs(playlistId) {
     playlistAuthorCache.set(playlistId, result);
     return result;
   } catch {
+    playlistAuthorCache.set(playlistId, null);
     return null;
   }
 }
@@ -319,12 +327,8 @@ async function fetchMain(apiPath) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || `HTTP ${res.status}`);
   }
-  const data = await res.json();
-  if (data && typeof data.error === 'string') throw new Error(data.error);
-  fetchMain.lastInstance = res.headers.get('X-Instance-Used') || null;
-  return data;
+  return await res.json();
 }
-fetchMain.lastInstance = null;
 
 function createCommentItem(c) {
   const div = document.createElement('div');
