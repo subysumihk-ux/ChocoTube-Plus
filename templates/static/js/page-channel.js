@@ -171,6 +171,9 @@ async function loadHomeTab() {
           if (firstType === 'RecognitionShelf') continue;
           const block = createHomeShelf(item.title?.text || '', shelfItems);
           if (block) homeArea.appendChild(block);
+        } else if (item.type === 'ReelShelf') {
+          const block = createHomeReelShelf(item);
+          if (block) homeArea.appendChild(block);
         }
       }
     }
@@ -234,6 +237,15 @@ function createHomeShelf(title, items) {
     if (item.type === 'GridVideo') {
       const card = createHomeVideoCard(item);
       if (card) row.appendChild(card);
+    } else if (item.type === 'LockupView' && item.content_type === 'VIDEO') {
+      const card = createHomeLockupCard(item);
+      if (card) row.appendChild(card);
+    } else if (item.type === 'LockupView' && item.content_type === 'SHORT') {
+      const card = createHomeLockupCard(item);
+      if (card) row.appendChild(card);
+    } else if (item.type === 'LockupView' && item.content_type === 'PLAYLIST') {
+      const card = createHomeLockupPlaylistCard(item);
+      if (card) row.appendChild(card);
     } else if (item.type === 'GridChannel') {
       const card = createHomeChannelCard(item);
       if (card) row.appendChild(card);
@@ -269,6 +281,112 @@ function createHomeVideoCard(item) {
     <div class="home-vc-info">
       <div class="home-vc-title">${escapeHtml(title)}</div>
       <div class="home-vc-meta">${[views, published].filter(Boolean).map(escapeHtml).join(' · ')}</div>
+    </div>
+  `;
+  return a;
+}
+
+function createHomeLockupCard(item) {
+  const videoId = item.content_id;
+  if (!videoId) return null;
+  const title = item.metadata?.title?.text || '';
+  const images = item.content_image?.image || [];
+  const thumbUrl = images.length ? wsrv(images[0].url, 360) : getThumbnailUrl(videoId);
+  const overlays = item.content_image?.overlays || [];
+  const badgeOverlay = overlays.find(o => o.type === 'ThumbnailBottomOverlayView');
+  const durationText = badgeOverlay?.badges?.[0]?.text || '';
+  const metaRows = item.metadata?.metadata?.metadata_rows || [];
+  const parts = metaRows[0]?.metadata_parts || [];
+  const views = parts[0]?.text?.text || '';
+  const published = parts[1]?.text?.text || '';
+
+  const isShort = item.content_type === 'SHORT';
+  const a = document.createElement('a');
+  a.className = isShort ? 'home-video-card home-shorts-card' : 'home-video-card';
+  a.href = isShort ? `/shorts/${encodeURIComponent(videoId)}` : `/watch?v=${encodeURIComponent(videoId)}`;
+  a.innerHTML = `
+    <div class="${isShort ? 'home-vc-thumb-wrap home-vc-thumb-portrait' : 'home-vc-thumb-wrap'}">
+      <img class="home-vc-thumb" src="${thumbUrl}" alt="${escapeHtml(title)}" loading="lazy" onload="this.classList.add('loaded')" />
+      ${durationText ? `<span class="home-vc-duration">${escapeHtml(durationText)}</span>` : ''}
+    </div>
+    <div class="home-vc-info">
+      <div class="home-vc-title">${escapeHtml(title)}</div>
+      <div class="home-vc-meta">${[views, published].filter(Boolean).map(escapeHtml).join(' · ')}</div>
+    </div>
+  `;
+  return a;
+}
+
+function createHomeLockupPlaylistCard(item) {
+  const playlistId = item.content_id;
+  if (!playlistId) return null;
+  const title = item.metadata?.title?.text || '';
+  const images = item.content_image?.image || [];
+  const thumbUrl = images.length ? wsrv(images[0].url, 360) : null;
+
+  const a = document.createElement('a');
+  a.className = 'home-video-card';
+  a.href = `/playlist?list=${encodeURIComponent(playlistId)}`;
+  a.innerHTML = `
+    <div class="home-vc-thumb-wrap">
+      ${thumbUrl
+        ? `<img class="home-vc-thumb" src="${thumbUrl}" alt="${escapeHtml(title)}" loading="lazy" onload="this.classList.add('loaded')" />`
+        : `<div class="home-vc-playlist-placeholder"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>`
+      }
+    </div>
+    <div class="home-vc-info">
+      <div class="home-vc-title">${escapeHtml(title)}</div>
+      <div class="home-vc-meta" style="color:var(--accent);font-size:0.72rem;">再生リスト</div>
+    </div>
+  `;
+  return a;
+}
+
+function createHomeReelShelf(item) {
+  const title = item.title?.text || 'ショート';
+  const items = item.items || [];
+  if (!items.length) return null;
+
+  const div = document.createElement('div');
+  div.className = 'home-shelf';
+
+  const header = document.createElement('div');
+  header.className = 'home-shelf-header';
+  header.textContent = title;
+  div.appendChild(header);
+
+  const row = document.createElement('div');
+  row.className = 'home-shelf-row';
+
+  for (const si of items) {
+    if (si.type === 'ShortsLockupView') {
+      const card = createHomeShortsLockupCard(si);
+      if (card) row.appendChild(card);
+    }
+  }
+
+  if (!row.children.length) return null;
+  div.appendChild(row);
+  return div;
+}
+
+function createHomeShortsLockupCard(item) {
+  const videoId = item.on_tap_endpoint?.payload?.videoId;
+  if (!videoId) return null;
+  const thumbs = item.on_tap_endpoint?.payload?.thumbnail?.thumbnails || [];
+  const thumbUrl = thumbs.length ? wsrv(thumbs[0].url, 200) : getThumbnailUrl(videoId);
+  const accText = item.accessibility_text || '';
+  const title = accText.replace(/,\s*[\d.,]+[KMB]?\s*(million\s+)?views?\s*[-–]\s*play\s+Short\s*$/i, '').trim() || videoId;
+
+  const a = document.createElement('a');
+  a.className = 'home-video-card home-shorts-card';
+  a.href = `/shorts/${encodeURIComponent(videoId)}`;
+  a.innerHTML = `
+    <div class="home-vc-thumb-wrap home-vc-thumb-portrait">
+      <img class="home-vc-thumb" src="${thumbUrl}" alt="${escapeHtml(title)}" loading="lazy" onload="this.classList.add('loaded')" />
+    </div>
+    <div class="home-vc-info">
+      <div class="home-vc-title">${escapeHtml(title)}</div>
     </div>
   `;
   return a;
@@ -365,7 +483,7 @@ async function loadTab(tab, reset = true) {
       if (!reset && continuation) p.set('continuation', continuation);
       const raw = await fetchMain(`/api/channels/${encodeURIComponent(channelId)}/videos?${p}`);
       if (myGen !== loadGen) return;
-      items = raw.videos || [];
+      items = (raw.videos || []).filter(v => v.videoId);
       newContinuation = raw.continuation || null;
 
     } else if (tab === 'shorts') {
@@ -373,7 +491,7 @@ async function loadTab(tab, reset = true) {
       if (!reset && continuation) p.set('continuation', continuation);
       const raw = await fetchMain(`/api/channels/${encodeURIComponent(channelId)}/shorts?${p}`);
       if (myGen !== loadGen) return;
-      items = raw.videos || [];
+      items = (raw.videos || []).filter(v => v.videoId);
       newContinuation = raw.continuation || null;
 
     } else if (tab === 'streams') {
@@ -381,13 +499,13 @@ async function loadTab(tab, reset = true) {
       if (!reset && continuation) p.set('continuation', continuation);
       const raw = await fetchMain(`/api/channels/${encodeURIComponent(channelId)}/streams?${p}`);
       if (myGen !== loadGen) return;
-      items = raw.videos || [];
+      items = (raw.videos || []).filter(v => v.videoId);
       newContinuation = raw.continuation || null;
 
     } else if (tab === 'latest') {
       const raw = await fetchMain(`/api/channels/${encodeURIComponent(channelId)}/latest`);
       if (myGen !== loadGen) return;
-      items = Array.isArray(raw) ? raw : (raw.videos || []);
+      items = (Array.isArray(raw) ? raw : (raw.videos || [])).filter(v => v.videoId);
       newContinuation = null;
 
     } else if (tab === 'playlists') {
@@ -395,7 +513,7 @@ async function loadTab(tab, reset = true) {
       if (!reset && continuation) p.set('continuation', continuation);
       const raw = await fetchMain(`/api/channels/${encodeURIComponent(channelId)}/playlists?${p}`);
       if (myGen !== loadGen) return;
-      items = raw.playlists || [];
+      items = (raw.playlists || []).filter(pl => pl.playlistId);
       newContinuation = raw.continuation || null;
 
     } else if (tab === 'community') {
