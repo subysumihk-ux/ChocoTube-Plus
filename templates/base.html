@@ -17,10 +17,11 @@
       var theme = localStorage.getItem('ui-theme') || 'default';
       if (theme === 'pro') {
         var files = ['base','global','search','channel','watch','library','settings','shorts'];
+        var ver = '{{ static_ver }}';
         files.forEach(function(f) {
           var el = document.createElement('link');
           el.rel = 'stylesheet';
-          el.href = '/static/css/pro/' + f + '.css';
+          el.href = '/static/css/pro/' + f + '.css?v=' + ver;
           el.setAttribute('data-ui-pro', '1');
           document.head.appendChild(el);
         });
