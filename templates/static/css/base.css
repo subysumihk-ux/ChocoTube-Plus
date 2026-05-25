@@ -46,3 +46,35 @@ body {
 .header-refresh-btn.spinning svg { animation: spin360 0.6s linear; }
 @keyframes spin360 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+.header-ui-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.38rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+.header-ui-btn:hover {
+  color: var(--accent-bright);
+  border-color: var(--border-glow);
+  background: var(--surface);
+}
+.header-ui-btn.ui-btn-pro {
+  color: #d2691e;
+  border-color: rgba(210,140,70,0.45);
+  background: rgba(139,69,19,0.12);
+}
+.header-ui-btn.ui-btn-pro:hover {
+  background: rgba(139,69,19,0.22);
+  border-color: rgba(210,140,70,0.7);
+}
+
