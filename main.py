@@ -502,6 +502,107 @@ async def proxy_stream(path: str, request: Request):
         return JSONResponse({"error": str(e)}, status_code=502)
 
 
+def _parse_innertube_search_shorts(data: dict) -> tuple:
+    """InnerTube検索レスポンス（youtubei.js形式）からショート動画を抽出してInvidious互換形式に変換。
+    Returns: (shorts_list, cont_key_or_None)
+    """
+    shorts = []
+    cont_key = data.get("_contKey")
+    results = data.get("results") or data.get("items") or []
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+        t = item.get("type", "")
+        is_reel = (t == "Reel")
+        dur_secs = 0
+        if t == "Video":
+            dur = item.get("duration", {})
+            if isinstance(dur, dict):
+                dur_secs = dur.get("seconds", 0) or 0
+            elif isinstance(dur, (int, float)):
+                dur_secs = int(dur)
+        is_short_video = (t == "Video" and 0 < dur_secs <= 90)
+        if not (is_reel or is_short_video):
+            continue
+
+        video_id = item.get("id") or item.get("videoId") or ""
+        if not video_id:
+            continue
+
+        title_raw = item.get("title", "")
+        if isinstance(title_raw, dict):
+            runs = title_raw.get("runs", [{}])
+            title = title_raw.get("text", "") or (runs[0].get("text", "") if runs else "")
+        else:
+            title = str(title_raw)
+
+        author_raw = item.get("author", {})
+        if isinstance(author_raw, dict):
+            author = author_raw.get("name", "") or str(author_raw.get("text", ""))
+            ep = author_raw.get("endpoint", {}) or {}
+            author_id = author_raw.get("id", "") or ep.get("payload", {}).get("browseId", "")
+        else:
+            author = str(author_raw) if author_raw else ""
+            author_id = ""
+
+        thumbs_raw = item.get("thumbnails", []) or []
+        thumbnails = [
+            {"url": th["url"], "width": th.get("width", 0), "height": th.get("height", 0)}
+            for th in thumbs_raw if isinstance(th, dict) and th.get("url")
+        ]
+
+        vc_raw = item.get("view_count") or item.get("short_view_count") or {}
+        if isinstance(vc_raw, dict):
+            vc_text = vc_raw.get("text", "0")
+        else:
+            vc_text = str(vc_raw) if vc_raw else "0"
+
+        shorts.append({
+            "videoId": video_id,
+            "title": title,
+            "lengthSeconds": dur_secs if is_short_video else 30,
+            "isShort": True,
+            "author": author,
+            "authorId": author_id,
+            "authorThumbnails": [],
+            "videoThumbnails": thumbnails,
+            "viewCountText": vc_text,
+        })
+    return shorts, cont_key
+
+
+@app.get("/api/innertube-shorts-search")
+async def innertube_shorts_search(q: str = Query(...)):
+    try:
+        client = await get_client()
+        resp = await client.get(
+            f"{INNERTUBE_BASE}/search",
+            params={"q": q, "type": "all"},
+            timeout=httpx.Timeout(12.0),
+        )
+        resp.raise_for_status()
+        shorts, cont_key = _parse_innertube_search_shorts(resp.json())
+        return JSONResponse({"items": shorts, "contKey": cont_key})
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=502)
+
+
+@app.get("/api/innertube-shorts-search-cont")
+async def innertube_shorts_search_cont(contKey: str = Query(...)):
+    try:
+        client = await get_client()
+        resp = await client.get(
+            f"{INNERTUBE_BASE}/search/continue",
+            params={"key": contKey},
+            timeout=httpx.Timeout(12.0),
+        )
+        resp.raise_for_status()
+        shorts, cont_key = _parse_innertube_search_shorts(resp.json())
+        return JSONResponse({"items": shorts, "contKey": cont_key})
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=502)
+
+
 @app.get("/download")
 async def download(url: str = Query(...), filename: str = Query(default="download")):
     try:
