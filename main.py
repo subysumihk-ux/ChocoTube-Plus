@@ -675,7 +675,7 @@ async def whats():
 
 @app.get("/version")
 async def version():
-    return {"ver": "1.11"}
+    return {"ver": "1.20"}
 
 
 LINKLIST_URL = "https://raw.githubusercontent.com/kuru-bana/Link-list/refs/heads/main/choco-tube-plus.json"
