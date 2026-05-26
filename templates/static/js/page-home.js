@@ -78,16 +78,16 @@
     if (label) label.textContent = '検索・視聴履歴に基づくおすすめ';
 
     const watchHist = (typeof getHistory === 'function') ? getHistory() : [];
-    const watchSeeds = weightedPickRandom(watchHist, Math.min(2, watchHist.length))
+    const watchSeeds = weightedPickRandom(watchHist, Math.min(5, watchHist.length))
       .map(v => v.videoId).filter(Boolean);
 
-    const terms = weightedPickRandom(history, Math.min(3, history.length));
+    const terms = weightedPickRandom(history, Math.min(2, history.length));
     const searchResults = await Promise.all(terms.map(t => fetchSearchVideos(t)));
 
     const searchSeeds = [];
     searchResults.forEach(results => {
       if (results.length) {
-        const picks = pickRandom(results, 2);
+        const picks = pickRandom(results, 1);
         picks.forEach(v => searchSeeds.push(v.videoId));
       }
     });
@@ -290,7 +290,7 @@
     grid.innerHTML = '';
     for (let i = 0; i < 20; i++) grid.appendChild(createSkeletonCard());
     try {
-      const raw = await fetchMain('/api/trending');
+      const raw = await fetchMain('/api/trending?region=JP');
       const data = Array.isArray(raw) ? raw : (raw.results || raw.videos || []);
       grid.innerHTML = '';
       if (!data.length) {
