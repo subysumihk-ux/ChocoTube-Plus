@@ -210,7 +210,9 @@ async function startShortsAutoFetch(q, region, gen) {
     await new Promise(r => setTimeout(r, 350));
   }
 
-  await Promise.allSettled([q2Promise, innertubePromise].filter(Boolean));
+  const csePromise = startCseShortsSearch(q, gen);
+
+  await Promise.allSettled([q2Promise, innertubePromise, csePromise].filter(Boolean));
 
   if (gen === shortsAutoGen && allShortsFound.length === 0 && shortsShelfEl) {
     const scroll = shortsShelfEl.querySelector('.shorts-shelf-scroll');
@@ -221,6 +223,101 @@ async function startShortsAutoFetch(q, region, gen) {
       empty.className = 'shorts-empty-text';
       empty.textContent = 'ショートが見つかりませんでした';
       scroll.appendChild(empty);
+    }
+  }
+}
+
+function _waitCseReady(timeout) {
+  return new Promise(function(resolve, reject) {
+    if (window._cseReady) { resolve(); return; }
+    var start = Date.now();
+    var check = setInterval(function() {
+      if (window._cseReady) { clearInterval(check); resolve(); return; }
+      if (Date.now() - start > timeout) { clearInterval(check); reject(new Error('CSE timeout')); }
+    }, 150);
+  });
+}
+
+function _cseSearchOnce(query) {
+  return new Promise(function(resolve) {
+    window._cseResultCallback = resolve;
+
+    clearTimeout(window._cseCaptchaTimer);
+    window._cseCaptchaTimer = setTimeout(function() {
+      if (window._cseResultCallback) {
+        window._cseShowCaptchaOverlay();
+      }
+    }, 3000);
+
+    try {
+      var element = google.search.cse.element.getElement('chocoCse');
+      element.execute(query);
+    } catch (e) {
+      clearTimeout(window._cseCaptchaTimer);
+      window._cseResultCallback = null;
+      window._cseHideCaptchaOverlay();
+      resolve([]);
+    }
+  });
+}
+
+function _extractShortsVideoId(url) {
+  var m = (url || '').match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+async function startCseShortsSearch(q, gen) {
+  if (!window._cseCx) return;
+
+  try {
+    await _waitCseReady(9000);
+  } catch (e) {
+    console.warn('[CSE] not ready:', e);
+    return;
+  }
+
+  const queries = [
+    q + ' ショート site:youtube.com',
+    q + ' #shorts site:youtube.com'
+  ];
+
+  for (const searchQ of queries) {
+    if (gen !== shortsAutoGen) return;
+    try {
+      const results = await _cseSearchOnce(searchQ);
+      if (gen !== shortsAutoGen) return;
+
+      const newShorts = [];
+      (results || []).forEach(function(r) {
+        const url = r.unescapedUrl || r.url || '';
+        if (!url.includes('/shorts/')) return;
+        const id = _extractShortsVideoId(url);
+        if (!id || shortsSeenIds.has(id)) return;
+        shortsSeenIds.add(id);
+        const item = {
+          videoId: id,
+          title: r.titleNoFormatting || r.title || id,
+          isShort: true,
+          lengthSeconds: 30,
+          authorId: '',
+          author: '',
+          authorThumbnails: null,
+          viewCount: 0,
+          published: 0
+        };
+        allShortsFound.push(item);
+        newShorts.push(item);
+      });
+
+      if (newShorts.length > 0 && shortsShelfEl) {
+        appendShortsToShelf(shortsShelfEl, newShorts, allShortsFound, q);
+        const section = document.getElementById('shortsSection');
+        if (section) section.hidden = false;
+      }
+
+      await new Promise(function(r) { setTimeout(r, 600); });
+    } catch (e) {
+      console.warn('[CSE] shorts search error:', e);
     }
   }
 }
