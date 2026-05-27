@@ -61,12 +61,32 @@ function clearHistory() {
   localStorage.removeItem(LIB_HIST_KEY);
 }
 
+/* ===== SHORTS HISTORY ===== */
+const LIB_SHORTS_HIST_KEY = 'chocotube_shorts_history';
+const LIB_SHORTS_HIST_MAX = 500;
+
+function getShortsHistory() {
+  try { return JSON.parse(localStorage.getItem(LIB_SHORTS_HIST_KEY) || '[]'); } catch { return []; }
+}
+
+function addShortsHistory(video) {
+  const hist = getShortsHistory().filter(h => h.videoId !== video.videoId);
+  hist.unshift({ ...video, watchedAt: Date.now() });
+  if (hist.length > LIB_SHORTS_HIST_MAX) hist.length = LIB_SHORTS_HIST_MAX;
+  localStorage.setItem(LIB_SHORTS_HIST_KEY, JSON.stringify(hist));
+}
+
+function clearShortsHistory() {
+  localStorage.removeItem(LIB_SHORTS_HIST_KEY);
+}
+
 function exportLibrary() {
   const payload = {
     version: 2,
     exportedAt: new Date().toISOString(),
     subscriptions: getSubscriptions(),
     history: getHistory(),
+    shortsHistory: getShortsHistory(),
     playlists: getPlaylists(),
     favorites: getFavorites(),
     favPlaylists: getFavoritePlaylists(),
@@ -124,6 +144,14 @@ function importLibrary(file) {
           const ids = new Set(existing.map(m => m.mixId));
           const merged = [...existing, ...data.favMixes.filter(m => !ids.has(m.mixId))];
           localStorage.setItem(LIB_FAV_MIX_KEY, JSON.stringify(merged));
+        }
+        if (data.shortsHistory && Array.isArray(data.shortsHistory)) {
+          const existing = getShortsHistory();
+          const ids = new Set(data.shortsHistory.map(h => h.videoId));
+          const merged = [...data.shortsHistory, ...existing.filter(h => !ids.has(h.videoId))];
+          merged.sort((a, b) => (b.watchedAt || 0) - (a.watchedAt || 0));
+          if (merged.length > LIB_SHORTS_HIST_MAX) merged.length = LIB_SHORTS_HIST_MAX;
+          localStorage.setItem(LIB_SHORTS_HIST_KEY, JSON.stringify(merged));
         }
         resolve();
       } catch (err) { reject(err); }
