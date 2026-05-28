@@ -2,8 +2,34 @@
   if (!document.body.classList.contains('page-settings')) return;
 document.addEventListener('DOMContentLoaded', () => {
   initHeaderSearch();
+  initTabs();
   initSettings();
 });
+
+function initTabs() {
+  const tabs   = document.querySelectorAll('.settings-tab');
+  const panels = document.querySelectorAll('.settings-tab-panel');
+
+  const saved = sessionStorage.getItem('settings_tab') || 'playback';
+  activateTab(saved);
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const name = tab.dataset.tab;
+      sessionStorage.setItem('settings_tab', name);
+      activateTab(name);
+    });
+  });
+
+  function activateTab(name) {
+    tabs.forEach(t => {
+      const on = t.dataset.tab === name;
+      t.classList.toggle('active', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    panels.forEach(p => p.classList.toggle('active', p.dataset.panel === name));
+  }
+}
 
 function initSettings() {
   const settings = getSettings();
@@ -18,7 +44,18 @@ function initSettings() {
   const resetBtn              = document.getElementById('resetSettingsBtn');
   const clearHistBtn          = document.getElementById('clearHistBtn');
   const clearFavBtn           = document.getElementById('clearFavBtn');
+  const clearPlaylistsBtn     = document.getElementById('clearPlaylistsBtn');
+  const clearSubsBtn          = document.getElementById('clearSubsBtn');
   const toast                 = document.getElementById('savedToast');
+
+  const searchRegionSelect    = document.getElementById('searchRegionSelect');
+  const searchSortSelect      = document.getElementById('searchSortSelect');
+  const searchDateSelect      = document.getElementById('searchDateSelect');
+  const searchDurationSelect  = document.getElementById('searchDurationSelect');
+  const searchTypeSelect      = document.getElementById('searchTypeSelect');
+  const searchFeaturesWrap    = document.getElementById('searchFeaturesWrap');
+  const searchIncludeShorts   = document.getElementById('searchIncludeShortsToggle');
+  const searchSuggestions     = document.getElementById('searchSuggestionsToggle');
 
   speedSelect.value            = String(settings.defaultSpeed);
   loopToggle.checked           = !!settings.loop;
@@ -27,6 +64,20 @@ function initSettings() {
   savePositionToggle.checked   = !!settings.savePosition;
   volumeSlider.value           = String(settings.defaultVolume ?? 100);
   volumeValue.textContent      = `${settings.defaultVolume ?? 100}%`;
+
+  searchRegionSelect.value    = settings.searchRegion   || 'JP';
+  searchSortSelect.value      = settings.searchSort     || 'relevance';
+  searchDateSelect.value      = settings.searchDate     || '';
+  searchDurationSelect.value  = settings.searchDuration || '';
+  searchTypeSelect.value      = settings.searchType     || 'all';
+  searchIncludeShorts.checked = settings.searchIncludeShorts !== false;
+  searchSuggestions.checked   = settings.searchSuggestions  !== false;
+  if (settings.searchFeatures) {
+    settings.searchFeatures.split(',').forEach(f => {
+      const cb = searchFeaturesWrap.querySelector(`input[value="${f}"]`);
+      if (cb) cb.checked = true;
+    });
+  }
 
   function updateVolSliderFill() {
     const pct = ((volumeSlider.value - volumeSlider.min) / (volumeSlider.max - volumeSlider.min)) * 100;
@@ -41,14 +92,35 @@ function initSettings() {
     toastTimer = setTimeout(() => toast.classList.remove('visible'), 2000);
   }
 
-  function persist() {
+  function persistPlayback() {
     saveSettings({
-      defaultSpeed: parseFloat(speedSelect.value),
-      loop: loopToggle.checked,
-      autoplayNext: autoplayNextToggle.checked,
-      autoplay: autoplayToggle.checked,
-      savePosition: savePositionToggle.checked,
+      ...getSettings(),
+      defaultSpeed:  parseFloat(speedSelect.value),
+      loop:          loopToggle.checked,
+      autoplayNext:  autoplayNextToggle.checked,
+      autoplay:      autoplayToggle.checked,
+      savePosition:  savePositionToggle.checked,
       defaultVolume: parseInt(volumeSlider.value, 10),
+    });
+    showToast();
+  }
+
+  function getSelectedFeatures() {
+    return [...searchFeaturesWrap.querySelectorAll('input:checked')]
+      .map(cb => cb.value).join(',');
+  }
+
+  function persistSearch() {
+    saveSettings({
+      ...getSettings(),
+      searchRegion:         searchRegionSelect.value,
+      searchSort:           searchSortSelect.value,
+      searchDate:           searchDateSelect.value,
+      searchDuration:       searchDurationSelect.value,
+      searchType:           searchTypeSelect.value,
+      searchFeatures:       getSelectedFeatures(),
+      searchIncludeShorts:  searchIncludeShorts.checked,
+      searchSuggestions:    searchSuggestions.checked,
     });
     showToast();
   }
@@ -56,24 +128,29 @@ function initSettings() {
   volumeSlider.addEventListener('input', () => {
     volumeValue.textContent = `${volumeSlider.value}%`;
     updateVolSliderFill();
-    persist();
+    persistPlayback();
   });
 
-  speedSelect.addEventListener('change', persist);
+  speedSelect.addEventListener('change', persistPlayback);
   loopToggle.addEventListener('change', () => {
-    if (loopToggle.checked && autoplayNextToggle.checked) {
-      autoplayNextToggle.checked = false;
-    }
-    persist();
+    if (loopToggle.checked && autoplayNextToggle.checked) autoplayNextToggle.checked = false;
+    persistPlayback();
   });
   autoplayNextToggle.addEventListener('change', () => {
-    if (autoplayNextToggle.checked && loopToggle.checked) {
-      loopToggle.checked = false;
-    }
-    persist();
+    if (autoplayNextToggle.checked && loopToggle.checked) loopToggle.checked = false;
+    persistPlayback();
   });
-  autoplayToggle.addEventListener('change', persist);
-  savePositionToggle.addEventListener('change', persist);
+  autoplayToggle.addEventListener('change', persistPlayback);
+  savePositionToggle.addEventListener('change', persistPlayback);
+
+  searchRegionSelect.addEventListener('change', persistSearch);
+  searchSortSelect.addEventListener('change', persistSearch);
+  searchDateSelect.addEventListener('change', persistSearch);
+  searchDurationSelect.addEventListener('change', persistSearch);
+  searchTypeSelect.addEventListener('change', persistSearch);
+  searchFeaturesWrap.addEventListener('change', persistSearch);
+  searchIncludeShorts.addEventListener('change', persistSearch);
+  searchSuggestions.addEventListener('change', persistSearch);
 
   resetBtn.addEventListener('click', () => {
     if (!confirm('設定をすべてリセットしますか？')) return;
@@ -86,6 +163,14 @@ function initSettings() {
     savePositionToggle.checked   = !!def.savePosition;
     volumeSlider.value           = String(def.defaultVolume);
     volumeValue.textContent      = `${def.defaultVolume}%`;
+    searchRegionSelect.value    = def.searchRegion   || 'JP';
+    searchSortSelect.value      = def.searchSort     || 'relevance';
+    searchDateSelect.value      = def.searchDate     || '';
+    searchDurationSelect.value  = def.searchDuration || '';
+    searchTypeSelect.value      = def.searchType     || 'all';
+    searchFeaturesWrap.querySelectorAll('input').forEach(cb => cb.checked = false);
+    searchIncludeShorts.checked = def.searchIncludeShorts !== false;
+    searchSuggestions.checked   = def.searchSuggestions  !== false;
     updateVolSliderFill();
     showToast();
   });
@@ -99,6 +184,18 @@ function initSettings() {
   clearFavBtn.addEventListener('click', () => {
     if (!confirm('お気に入りをすべて削除しますか？')) return;
     localStorage.removeItem('chocotube_favorites');
+    showToast();
+  });
+
+  clearPlaylistsBtn.addEventListener('click', () => {
+    if (!confirm('プレイリストをすべて削除しますか？')) return;
+    localStorage.removeItem('chocotube_playlists');
+    showToast();
+  });
+
+  clearSubsBtn.addEventListener('click', () => {
+    if (!confirm('登録チャンネルをすべて解除しますか？')) return;
+    localStorage.removeItem('chocotube_subscriptions');
     showToast();
   });
 }
