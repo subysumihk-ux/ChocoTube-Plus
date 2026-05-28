@@ -150,10 +150,15 @@ function initHeaderSearch(options) {
     if (!resolved) { addSearchHistory(q); onSubmit(q); }
   });
 
+  function suggestionsEnabled() {
+    return typeof getSettings !== 'function' || getSettings().searchSuggestions !== false;
+  }
+
   searchInput.addEventListener('input', () => {
     clearTimeout(suggestTimer);
     const q = searchInput.value.trim();
-    if (!q) { showHistorySuggestions(); return; }
+    if (!q) { if (suggestionsEnabled()) showHistorySuggestions(); else hideSuggestions(); return; }
+    if (!suggestionsEnabled()) { hideSuggestions(); return; }
     suggestTimer = setTimeout(async () => {
       const items = await fetchSuggestions(q);
       showSuggestions(items, searchInput.value.trim());
@@ -184,6 +189,7 @@ function initHeaderSearch(options) {
   });
 
   searchInput.addEventListener('focus', () => {
+    if (!suggestionsEnabled()) return;
     const q = searchInput.value.trim();
     if (q) {
       clearTimeout(suggestTimer);
