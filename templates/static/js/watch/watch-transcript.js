@@ -31,9 +31,10 @@ function highlightTranscriptLine(player) {
     activeTranscriptLine = best;
     const container = document.getElementById('transcriptContent');
     if (container) {
-      const topOfLine = best.offsetTop;
-      const containerMid = container.clientHeight / 2;
-      container.scrollTo({ top: topOfLine - containerMid, behavior: 'smooth' });
+      const containerRect = container.getBoundingClientRect();
+      const lineRect = best.getBoundingClientRect();
+      const relativeTop = lineRect.top - containerRect.top + container.scrollTop;
+      container.scrollTo({ top: relativeTop - container.clientHeight / 2, behavior: 'smooth' });
     }
   }
 }
