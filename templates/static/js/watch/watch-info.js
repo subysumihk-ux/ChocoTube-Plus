@@ -122,6 +122,42 @@ let currentSortBy = 'top';
 let currentContinuation = null;
 let commentsLoading = false;
 
+function formatCommentText(text) {
+  if (!text) return '';
+  const escaped = escapeHtml(text).replace(/\n/g, '<br>');
+  return escaped.replace(/\b(\d{1,2}:\d{2}(?::\d{2})?)\b/g, (_, ts) =>
+    `<button class="comment-ts-link" data-ts="${ts}">${ts}</button>`
+  );
+}
+
+function tsStringToSeconds(ts) {
+  const parts = ts.split(':').map(Number);
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return 0;
+}
+
+function seekPlayerToSeconds(secs) {
+  const nc = document.getElementById('modeNocookie');
+  const ed = document.getElementById('modeEdu');
+  if ((nc && nc.classList.contains('active')) || (ed && ed.classList.contains('active'))) {
+    const iframe = (nc && nc.classList.contains('active'))
+      ? document.getElementById('nocookiePlayer')
+      : document.getElementById('eduPlayer');
+    if (iframe) iframe.contentWindow.postMessage(
+      JSON.stringify({ event: 'command', func: 'seekTo', args: [secs, true] }), '*'
+    );
+  } else {
+    const player = document.getElementById('videoPlayer');
+    if (player) {
+      player.currentTime = secs;
+      player.play().catch(() => {});
+    }
+  }
+  const playerWrap = document.getElementById('playerWrap');
+  if (playerWrap) playerWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 function createCommentSkeleton() {
   const div = document.createElement('div');
   div.className = 'comment-skeleton';
@@ -174,7 +210,7 @@ function createCommentItem(c) {
         ${c.publishedText ? `<span class="comment-date">${escapeHtml(c.publishedText)}</span>` : ''}
         ${c.isPinned ? `<span class="comment-pinned">📌 固定</span>` : ''}
       </div>
-      <div class="comment-text">${escapeHtml(c.content || '')}</div>
+      <div class="comment-text">${formatCommentText(c.content || '')}</div>
       <div class="comment-footer">${likesHtml}${repliesHtml}</div>
     </div>
   `;
@@ -248,6 +284,17 @@ async function loadComments(videoId, sortBy, continuation = null, append = false
 function initComments(videoId) {
   const sortBtns = document.querySelectorAll('.sort-btn');
   const loadMoreBtn = document.getElementById('loadMoreBtn');
+  const commentsList = document.getElementById('commentsList');
+
+  if (commentsList && !commentsList.dataset.tsBound) {
+    commentsList.dataset.tsBound = '1';
+    commentsList.addEventListener('click', e => {
+      const btn = e.target.closest('.comment-ts-link');
+      if (!btn) return;
+      e.preventDefault();
+      seekPlayerToSeconds(tsStringToSeconds(btn.dataset.ts));
+    });
+  }
 
   sortBtns.forEach(btn => {
     btn.addEventListener('click', () => {
