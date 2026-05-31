@@ -16,7 +16,7 @@
     <p class="tool-desc">プライバシー重視のYouTube代替フロントエンドです。</p>
     <div class="yt-site-grid">
       <a href="/tool/youtube/sia" class="yt-site-card" target="_blank" rel="noopener">
-        <div class="yt-site-badge sia">SIA</div>
+        <div class="yt-site-badge"><img src="/photo/sia.png" alt="しあTube" class="yt-site-img"></div>
         <div class="yt-site-body">
           <span class="yt-site-name">しあTube</span>
           <span class="yt-site-note">siawaseokさんが開発したyoutubeサイト</span>
@@ -24,7 +24,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
       <a href="/tool/youtube/xerox" class="yt-site-card" target="_blank" rel="noopener">
-        <div class="yt-site-badge xerox">X</div>
+        <div class="yt-site-badge"><img src="/photo/xerox.png" alt="XeroxYT" class="yt-site-img"></div>
         <div class="yt-site-body">
           <span class="yt-site-name">XeroxYT v5</span>
           <span class="yt-site-note">soranousさんが開発したyoutubeサイト<br>V6がもうすぐあるらしい</span>
@@ -44,14 +44,13 @@
 .tool-heading svg { color: #ff0000; }
 .tool-desc { color: var(--text-secondary); margin: 0 0 28px; font-size: .9rem; }
 .yt-site-grid { display: flex; flex-direction: column; gap: 10px; }
-.yt-site-card { display: flex; align-items: center; gap: 16px; background: var(--bg-secondary); border: 1px solid var(--border-color, rgba(128,128,128,.2)); border-radius: 12px; padding: 16px 18px; text-decoration: none; color: inherit; transition: background .15s, transform .1s; }
-.yt-site-card:hover { background: var(--bg-tertiary, var(--bg-secondary)); transform: translateY(-1px); }
-.yt-site-badge { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0; }
-.yt-site-badge.sia { background: #e8f4fd; color: #1a73e8; }
-.yt-site-badge.xerox { background: #1a1a1a; color: #fff; }
-.yt-site-body { flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.yt-site-name { font-weight: 600; font-size: .97rem; }
-.yt-site-note { font-size: .8rem; color: var(--text-secondary); }
+.yt-site-card { display: flex; align-items: center; gap: 18px; background: var(--bg-secondary); border: 1px solid var(--border-color, rgba(128,128,128,.2)); border-radius: 14px; padding: 18px 20px; text-decoration: none; color: inherit; transition: background .15s, transform .1s, box-shadow .15s; }
+.yt-site-card:hover { background: var(--bg-tertiary, var(--bg-secondary)); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.18); }
+.yt-site-badge { width: 72px; height: 72px; border-radius: 14px; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.yt-site-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.yt-site-body { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.yt-site-name { font-weight: 700; font-size: 1.05rem; }
+.yt-site-note { font-size: .82rem; color: var(--text-secondary); line-height: 1.5; }
 .yt-site-card > svg { flex-shrink: 0; color: var(--text-secondary); }
 </style>
 {% endblock %}
