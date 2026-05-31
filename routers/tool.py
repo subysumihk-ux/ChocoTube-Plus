@@ -17,18 +17,10 @@ async def tool_youtube(request: Request):
 
 
 @router.get("/tool/youtube/sia")
-async def tool_youtube_sia(request: Request):
-    return templates.TemplateResponse(request, "tool/youtube/wrapper/sia.html", {"active": "tool"})
-
-@router.get("/tool/youtube/sia-frame")
-async def tool_youtube_sia_frame():
+async def tool_youtube_sia():
     return FileResponse("templates/tool/youtube/sia-tube.html", media_type="text/html")
 
 
 @router.get("/tool/youtube/xerox")
-async def tool_youtube_xerox(request: Request):
-    return templates.TemplateResponse(request, "tool/youtube/wrapper/xerox.html", {"active": "tool"})
-
-@router.get("/tool/youtube/xerox-frame")
-async def tool_youtube_xerox_frame():
+async def tool_youtube_xerox():
     return FileResponse("templates/tool/youtube/xerox.html", media_type="text/html")
