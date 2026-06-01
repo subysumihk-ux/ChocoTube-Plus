@@ -35,8 +35,13 @@ function initModeBar(videoId) {
     }
   }
 
+  function savePreferredMode(mode) {
+    try { localStorage.setItem('chocotube_preferred_mode', mode); } catch {}
+  }
+
   modeStream.addEventListener('click', () => {
     if (modeStream.classList.contains('active')) return;
+    savePreferredMode('stream');
     const ct = getEstimatedCurrentTime();
     stopIframeTracking();
     if (hqActive) teardownHQ();
@@ -82,6 +87,7 @@ function initModeBar(videoId) {
 
   modeHQ.addEventListener('click', () => {
     if (modeHQ.classList.contains('active')) return;
+    savePreferredMode('hq');
     const ct = getEstimatedCurrentTime();
     stopIframeTracking();
     lastStreamSrc = (streamOnlyMode === 'audio' && lastNormalStreamSrc) ? lastNormalStreamSrc : player.src;
@@ -114,11 +120,18 @@ function initModeBar(videoId) {
     setOverlayQualMode('hq');
     hqActive = true;
     player.removeAttribute('hidden');
-    applyHQStream(ct, true);
+    const _hqVidSel = document.getElementById('hqVideoSelect');
+    if (_hqVidSel && _hqVidSel.options.length > 0) {
+      applyHQStream(ct, true);
+    } else {
+      const _hqSt = document.getElementById('hqStatus');
+      if (_hqSt) { _hqSt.textContent = '読み込み中...'; _hqSt.className = 'hq-status'; }
+    }
   });
 
   modeNocookie.addEventListener('click', () => {
     if (modeNocookie.classList.contains('active')) return;
+    savePreferredMode('nocookie');
     const ct = getEstimatedCurrentTime();
     stopIframeTracking();
     if (hqActive) teardownHQ();
@@ -214,6 +227,7 @@ function initModeBar(videoId) {
   }
 
   function activateEdu() {
+    savePreferredMode('edu');
     const ct = getEstimatedCurrentTime();
     stopIframeTracking();
     if (hqActive) teardownHQ();
@@ -258,10 +272,16 @@ function initModeBar(videoId) {
   });
 
   const modeParam = params.get('mode');
-  if (modeParam === 'nocookie') {
+  const _savedMode = (() => { try { return localStorage.getItem('chocotube_preferred_mode') || ''; } catch { return ''; } })();
+  const _targetMode = modeParam || _savedMode;
+
+  if (_targetMode === 'nocookie') {
     setTimeout(() => modeNocookie.click(), 0);
-  } else if (modeParam === 'edu' && modeEdu) {
+  } else if (_targetMode === 'edu' && modeEdu) {
     setTimeout(() => modeEdu.click(), 0);
+  } else if (_targetMode === 'hq') {
+    // HQ ボタンはデータ読み込み後に有効化されるため、initHQMode() 側で処理する
+    window._pendingHQMode = true;
   }
 
   // ループトグル時に iframe を再読み込みするためのグローバルフック
