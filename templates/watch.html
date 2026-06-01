@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block title %}視聴中 - Choco-tube-plus{% endblock %}
 {% block body_class %}page-watch{% endblock %}
+{% block page_css %}
+<link rel="stylesheet" href="/static/css/watch.css?v={{ static_ver }}" data-page-css="watch" />
+{% endblock %}
 {% block content %}
 <main class="watch-main" id="watchMain">
     <div class="watch-layout">
@@ -116,7 +119,7 @@
           <div class="pc-row pc-main-row">
             <div class="pc-group">
               <button class="pc-mode-btn active" id="modeStream">ストリーム</button>
-              <button class="pc-mode-btn" id="modeHQ" disabled title="高画質・高音質モード（映像+音声を個別選択）">高画質・高音質</button>
+              <button class="pc-mode-btn" id="modeHQ" title="高画質・高音質モード（映像+音声を個別選択）">高画質・高音質</button>
               <button class="pc-mode-btn" id="modeNocookie">nocookie</button>
               <button class="pc-mode-btn" id="modeEdu">edu</button>
             </div>
