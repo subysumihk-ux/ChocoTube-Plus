@@ -263,6 +263,17 @@
 
         <div class="settings-row">
           <div class="settings-row-info">
+            <div class="settings-row-label">検索取得ソース順序</div>
+            <div class="settings-row-desc">検索結果を取得するバックエンドの優先順（→ はフォールバック先）</div>
+          </div>
+          <select class="settings-select" id="searchSourceOrderSelect">
+            <option value="inv-piped">Invidious → Piped</option>
+            <option value="piped-inv">Piped → Invidious</option>
+          </select>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-info">
             <div class="settings-row-label">ショートを検索結果に含める</div>
             <div class="settings-row-desc">検索結果にショート動画（縦型・60秒未満）を表示する</div>
           </div>
