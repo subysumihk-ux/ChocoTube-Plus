@@ -118,7 +118,20 @@
           <!-- Row 1: mode + speed + actions -->
           <div class="pc-row pc-main-row">
             <div class="pc-group">
-              <button class="pc-mode-btn active" id="modeStream">ストリーム</button>
+              <div class="pc-stream-group">
+                <button class="pc-mode-btn active" id="modeStream">ストリーム</button>
+                <div class="pc-stream-src-wrap" id="streamSrcWrap">
+                  <button class="pc-stream-src-btn" id="streamSrcBtn" title="ストリーム取得元を選択">
+                    <span id="streamSrcLabel">並列</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <div class="pc-stream-src-panel" id="streamSrcPanel" hidden>
+                    <button class="pc-stream-src-item" data-src="auto">並列</button>
+                    <button class="pc-stream-src-item" data-src="invidious">Invidious</button>
+                    <button class="pc-stream-src-item" data-src="rapidapi">RapidAPI</button>
+                  </div>
+                </div>
+              </div>
               <button class="pc-mode-btn" id="modeHQ" title="高画質・高音質モード（映像+音声を個別選択）">高画質・高音質</button>
               <button class="pc-mode-btn" id="modeNocookie">nocookie</button>
               <button class="pc-mode-btn" id="modeEdu">edu</button>
@@ -508,6 +521,14 @@
             <button class="pbset-mute-btn" id="pbsetMuteBtn" title="ミュート切替"></button>
             <input type="range" class="pbset-vol-slider" id="pbsetVolSlider" min="0" max="1" step="0.02" value="1">
             <span class="pbset-vol-val" id="pbsetVolVal">100%</span>
+          </div>
+        </div>
+        <div class="pbset-section">
+          <div class="pbset-section-label">ストリーム取得元</div>
+          <div class="pbset-mode-row" id="pbsetStreamSrcRow">
+            <button class="pbset-mode-btn" data-src="auto">自動(並列)</button>
+            <button class="pbset-mode-btn" data-src="invidious">Invidious</button>
+            <button class="pbset-mode-btn" data-src="rapidapi">RapidAPI</button>
           </div>
         </div>
       </div>
