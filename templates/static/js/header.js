@@ -19,10 +19,26 @@ function initHeaderSearch(options) {
 
   async function fetchSuggestions(q) {
     if (!q) return [];
-    try {
-      const raw = await fetchMain(`/api/search/suggestions?q=${encodeURIComponent(q)}`);
-      return raw.suggestions || (Array.isArray(raw) ? raw : []);
-    } catch { return []; }
+    const [invResult, pipedResult, chocoResult] = await Promise.allSettled([
+      fetchMain(`/api/search/suggestions?q=${encodeURIComponent(q)}`),
+      fetch(`/api/piped-suggestions?q=${encodeURIComponent(q)}`, { signal: AbortSignal.timeout(6000) }).then(r => r.ok ? r.json() : { suggestions: [] }),
+      fetch(`https://choco-youtube-js.onrender.com/search/suggestions?q=${encodeURIComponent(q)}`, { signal: AbortSignal.timeout(6000) }).then(r => r.ok ? r.json() : { suggestions: [] }),
+    ]);
+    const invSugg = invResult.status === 'fulfilled'
+      ? (invResult.value.suggestions || (Array.isArray(invResult.value) ? invResult.value : []))
+      : [];
+    const pipedSugg = pipedResult.status === 'fulfilled'
+      ? (pipedResult.value.suggestions || [])
+      : [];
+    const chocoSugg = chocoResult.status === 'fulfilled'
+      ? (chocoResult.value.suggestions || (Array.isArray(chocoResult.value) ? chocoResult.value : []))
+      : [];
+    const seen = new Set();
+    const merged = [];
+    for (const s of [...invSugg, ...pipedSugg, ...chocoSugg]) {
+      if (typeof s === 'string' && !seen.has(s)) { seen.add(s); merged.push(s); }
+    }
+    return merged;
   }
 
   const IC_SEARCH = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
