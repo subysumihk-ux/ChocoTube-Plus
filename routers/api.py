@@ -657,3 +657,99 @@ async def whats():
 @router.get("/version")
 async def version():
     return {"ver": "1.30"}
+
+
+# ── Zernio stream ─────────────────────────────────────────────────────────────
+# getlate.dev/api/tools/youtube-live-downloader returns 302 Location=googlevideo URL.
+# Must NOT follow redirects — the Location header IS the stream URL.
+
+_ZERNIO_BASE = (
+    "https://getlate.dev/api/tools/youtube-live-downloader"
+    "?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D"
+)
+_ZERNIO_CACHE: dict = {}
+_ZERNIO_TTL = 60
+
+# formatId → itag mapping:
+# 1=240p video-only, 2=360p combined(video+audio), 3=480p video-only,
+# 4=720p video-only, 5=1080p video-only, 6=1080p AV1 video-only,
+# 7=1440p AV1 video-only, 8=144p video-only, 9+=falls back to 144p
+_ZERNIO_FORMAT_DEFAULT = 2
+
+_ZERNIO_FORMAT_META = {
+    1: {"quality": "240p",  "type": "video-only", "codec": "H.264"},
+    2: {"quality": "360p",  "type": "combined",   "codec": "H.264"},
+    3: {"quality": "480p",  "type": "video-only", "codec": "H.264"},
+    4: {"quality": "720p",  "type": "video-only", "codec": "H.264"},
+    5: {"quality": "1080p", "type": "video-only", "codec": "H.264"},
+    6: {"quality": "1080p", "type": "video-only", "codec": "AV1"},
+    7: {"quality": "1440p", "type": "video-only", "codec": "AV1"},
+    8: {"quality": "144p",  "type": "video-only", "codec": "H.264"},
+}
+
+
+@router.get("/api/zerniostream/{video_id}")
+async def api_zerniostream(video_id: str, formatId: int = _ZERNIO_FORMAT_DEFAULT):
+    """Fetch stream URL via getlate.dev (302 Location = googlevideo URL). Returns plain text URL."""
+    from fastapi.responses import PlainTextResponse
+
+    cache_key = f"{video_id}:{formatId}"
+    now = time.time()
+    cached = _ZERNIO_CACHE.get(cache_key)
+    if cached and cached["expiry"] > now:
+        return PlainTextResponse(cached["url"])
+
+    target_url = _ZERNIO_BASE + video_id + f"&formatId={formatId}"
+    try:
+        client = httpx.AsyncClient(
+            timeout=httpx.Timeout(18.0),
+            follow_redirects=False,
+        )
+        async with client:
+            resp = await client.get(
+                target_url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                                  "(KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+                },
+            )
+        location = resp.headers.get("location", "")
+        if not location:
+            return JSONResponse({"error": f"no redirect location (HTTP {resp.status_code})"}, status_code=502)
+        _ZERNIO_CACHE[cache_key] = {"url": location, "expiry": now + _ZERNIO_TTL}
+        return PlainTextResponse(location)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+async def _fetch_zernio_one(client: httpx.AsyncClient, video_id: str, format_id: int) -> dict:
+    cache_key = f"{video_id}:{format_id}"
+    now = time.time()
+    cached = _ZERNIO_CACHE.get(cache_key)
+    if cached and cached["expiry"] > now:
+        return {"formatId": format_id, "url": cached["url"], **_ZERNIO_FORMAT_META[format_id]}
+    try:
+        resp = await client.get(
+            _ZERNIO_BASE + video_id + f"&formatId={format_id}",
+            headers={
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                              "(KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+            },
+        )
+        location = resp.headers.get("location", "")
+        if location:
+            _ZERNIO_CACHE[cache_key] = {"url": location, "expiry": now + _ZERNIO_TTL}
+            return {"formatId": format_id, "url": location, **_ZERNIO_FORMAT_META[format_id]}
+        return {"formatId": format_id, "url": None, "error": f"HTTP {resp.status_code}", **_ZERNIO_FORMAT_META[format_id]}
+    except Exception as e:
+        return {"formatId": format_id, "url": None, "error": str(e), **_ZERNIO_FORMAT_META[format_id]}
+
+
+@router.get("/api/zerniostream/{video_id}/all")
+async def api_zerniostream_all(video_id: str):
+    """Fetch all 8 format stream URLs concurrently and return as JSON array."""
+    async with httpx.AsyncClient(timeout=httpx.Timeout(18.0), follow_redirects=False) as client:
+        results = await asyncio.gather(
+            *[_fetch_zernio_one(client, video_id, fid) for fid in _ZERNIO_FORMAT_META]
+        )
+    return JSONResponse(list(results))
