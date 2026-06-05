@@ -1,6 +1,7 @@
 function instanceHostname(invInstance) {
   if (!invInstance) return '';
   if (invInstance === 'rapidapi') return 'RapidAPI';
+  if (invInstance === 'zernio') return 'Zernio';
   try { return new URL(invInstance).hostname; } catch { return invInstance; }
 }
 
@@ -387,6 +388,7 @@ function initCustomControls() {
   if (vcQualWrap) initDropdown(vcQualWrap);
   if (vcHQVidWrap) initDropdown(vcHQVidWrap);
   if (vcHQAudWrap) initDropdown(vcHQAudWrap);
+
 
   // ── Speed ──
   let currentSpeed = 1;
@@ -1020,11 +1022,16 @@ async function initWatch(videoId) {
 
   document.getElementById('reloadAllBtn').addEventListener('click', () => reloadAll(videoId));
 
+  // 初期ロードの世代を記録（ソース切替で無効化される）
+  const _initLoadGen = ++_reloadGen;
+
   try {
     const [streamResult, metaData] = await Promise.all([
       withRetry(() => fetchBestStream(videoId)),
       withRetry(() => fetchMain(`/api/videos/${videoId}`))
     ]);
+
+    if (_initLoadGen !== _reloadGen) return;
 
     const { data: streamData, instanceUrl } = streamResult;
 
