@@ -178,6 +178,29 @@
             <div class="quality-btns" id="videoTrackBtns"></div>
           </div>
 
+          <!-- Zernio stream bar -->
+          <div class="pc-row pc-quality-row" id="zernioBar" hidden>
+            <span class="pc-label">Zernio</span>
+            <div class="quality-btns" id="zernioBtns">
+              <button class="quality-btn" id="zernioNormalBtn">通常</button>
+              <button class="quality-btn" id="zernioVideoBtn">映像のみ</button>
+            </div>
+            <span class="pc-alt-status" id="zernioStatus"></span>
+          </div>
+          <!-- Zernio quality bar (video-only) -->
+          <div class="pc-row pc-quality-row" id="zernioQualBar" hidden>
+            <span class="pc-label">画質</span>
+            <div class="quality-btns" id="zernioQualBtns">
+              <button class="quality-btn" data-fid="8">144p</button>
+              <button class="quality-btn" data-fid="1">240p</button>
+              <button class="quality-btn" data-fid="3">480p</button>
+              <button class="quality-btn" data-fid="4">720p</button>
+              <button class="quality-btn" data-fid="5">1080p H.264</button>
+              <button class="quality-btn" data-fid="6">1080p AV1</button>
+              <button class="quality-btn" data-fid="7">1440p AV1</button>
+            </div>
+          </div>
+
           <div class="pc-row pc-quality-row" id="hqBar" hidden>
             <div class="pc-group">
               <label class="pc-label" for="hqVideoSelect">映像</label>
