@@ -13,6 +13,7 @@ from routers import pages, static
 from routers.proxy import proxy, thumb
 from routers.videos import watch, channel, shorts, search, download
 from routers.tool import youtube as tool_youtube
+from routers.tool import game as tool_game
 
 
 @asynccontextmanager
@@ -41,6 +42,7 @@ app.include_router(download.router)
 app.include_router(static.router)
 app.include_router(pages.router)
 app.include_router(tool_youtube.router)
+app.include_router(tool_game.router)
 
 app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 app.mount("/photo", StaticFiles(directory="photo"), name="photo")
