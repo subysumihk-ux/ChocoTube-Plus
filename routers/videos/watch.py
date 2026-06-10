@@ -240,6 +240,161 @@ async def transcript_translate(video_id: str, lang: str = "en", target: str = "j
         return JSONResponse({"error": str(e)}, status_code=502)
 
 
+# ── Piped video info ──────────────────────────────────────────────────────────
+
+def _piped_date_to_relative(date_str: str) -> str:
+    try:
+        dt = datetime.date.fromisoformat(date_str[:10])
+        today = datetime.date.today()
+        days = (today - dt).days
+        if days < 0:
+            return date_str
+        if days == 0:
+            return "今日"
+        if days < 30:
+            return f"{days} 日前"
+        if days < 365:
+            months = days // 30
+            return f"{months} ヶ月前"
+        years = days // 365
+        return f"{years} 年前"
+    except Exception:
+        return date_str
+
+
+def _format_sub_count(count: int) -> str:
+    if not count:
+        return ""
+    if count >= 1_000_000:
+        return f"{count / 1_000_000:.1f}M"
+    if count >= 1_000:
+        return f"{round(count / 1_000)}K"
+    return str(count)
+
+
+def _piped_to_invidious(piped: dict) -> dict:
+    uploader_url = piped.get("uploaderUrl", "")
+    author_id = ""
+    if "/channel/" in uploader_url:
+        author_id = uploader_url.split("/channel/")[-1].strip("/")
+    elif uploader_url.startswith("/@"):
+        author_id = uploader_url[1:]
+    elif uploader_url.startswith("/c/"):
+        author_id = uploader_url[3:]
+
+    upload_date = piped.get("uploadDate", "")
+    published_text = _piped_date_to_relative(upload_date) if upload_date else ""
+
+    avatar = piped.get("uploaderAvatar", "")
+    author_thumbnails = [{"url": avatar, "width": 48, "height": 48}] if avatar else []
+
+    thumb_url = piped.get("thumbnailUrl", "")
+    video_thumbnails = [
+        {"quality": "maxresdefault", "url": thumb_url, "width": 1280, "height": 720},
+    ] if thumb_url else []
+
+    related_videos = []
+    for s in (piped.get("relatedStreams") or []):
+        if s.get("type") != "stream":
+            continue
+        vid_url = s.get("url", "")
+        vid_id = ""
+        if "?v=" in vid_url:
+            vid_id = vid_url.split("?v=")[-1].split("&")[0]
+        if not vid_id:
+            continue
+        up_url = s.get("uploaderUrl", "")
+        aut_id = ""
+        if "/channel/" in up_url:
+            aut_id = up_url.split("/channel/")[-1].strip("/")
+        s_thumb = s.get("thumbnail", "")
+        related_videos.append({
+            "videoId": vid_id,
+            "title": s.get("title", ""),
+            "author": s.get("uploaderName", ""),
+            "authorId": aut_id,
+            "lengthSeconds": s.get("duration", 0) or 0,
+            "viewCount": s.get("views", 0) or 0,
+            "publishedText": s.get("uploadedDate") or "",
+            "videoThumbnails": [{"quality": "hq", "url": s_thumb}] if s_thumb else [],
+        })
+
+    sub_count = piped.get("uploaderSubscriberCount") or 0
+
+    return {
+        "title": piped.get("title", ""),
+        "author": piped.get("uploader", "") or "",
+        "authorId": author_id,
+        "viewCount": piped.get("views", 0) or 0,
+        "likeCount": piped.get("likes", 0) or 0,
+        "publishedText": published_text,
+        "description": piped.get("description", ""),
+        "descriptionHtml": "",
+        "lengthSeconds": piped.get("duration", 0) or 0,
+        "subCount": sub_count,
+        "subCountText": _format_sub_count(sub_count),
+        "authorVerified": piped.get("uploaderVerified", False),
+        "authorThumbnails": author_thumbnails,
+        "videoThumbnails": video_thumbnails,
+        "recommendedVideos": related_videos,
+        "_source": "piped",
+    }
+
+
+async def _fetch_piped_info(video_id: str) -> dict | None:
+    for instance in _PIPED_INSTANCES:
+        try:
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(12.0), follow_redirects=True
+            ) as cl:
+                r = await cl.get(f"{instance}/streams/{video_id}")
+                r.raise_for_status()
+                data = r.json()
+                if isinstance(data, dict) and data.get("error"):
+                    continue
+                if not data.get("title"):
+                    continue
+                return _piped_to_invidious(data)
+        except Exception:
+            continue
+    return None
+
+
+@router.get("/api/videoinfo/{video_id}")
+async def api_video_info(video_id: str):
+    async def _inv() -> dict | None:
+        try:
+            result = await proxy_parallel("video", f"/api/v1/videos/{video_id}")
+            return result["data"]
+        except Exception:
+            return None
+
+    inv_task = asyncio.create_task(_inv())
+    piped_task = asyncio.create_task(_fetch_piped_info(video_id))
+
+    pending: set = {inv_task, piped_task}
+    result = None
+
+    while pending and result is None:
+        done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+        for task in done:
+            try:
+                r = task.result()
+                if r is not None:
+                    result = r
+                    break
+            except Exception:
+                pass
+
+    for task in pending:
+        task.cancel()
+
+    if result is not None:
+        return JSONResponse(result)
+
+    return JSONResponse({"error": "動画情報の取得に失敗しました"}, status_code=502)
+
+
 # ── Piped stream ───────────────────────────────────────────────────────────────
 
 _PIPED_INSTANCES = [
