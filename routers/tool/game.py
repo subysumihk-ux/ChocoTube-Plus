@@ -8,18 +8,13 @@ router = APIRouter()
 
 GAMES = [
     {
-        "slug": "choco-quiz",
-        "title": "チョコクイズ",
-        "thumb": "/photo/game/choco-quiz.svg",
-        "desc": "チョコレートの知識を試す本格クイズ！ステージ1〜5＆エンドレスモードで腕試し。",
-        "file": "templates/tool/game/fun/choco-quiz.html",
-    },
-    {
         "slug": "2048",
         "title": "2048",
         "thumb": "/photo/game/2048.webp",
         "desc": "スライドしてタイルを合体！2048を目指す数字パズル。シンプルだが奥が深い。",
         "file": "templates/tool/game/fun/2048.html",
+        "genre": "パズル",
+        "added": "2025-06-10",
     },
     {
         "slug": "backroom",
@@ -27,6 +22,8 @@ GAMES = [
         "thumb": "/photo/game/backroom.png",
         "desc": "バックルームの不気味な迷宮を探索するホラーサバイバルゲーム。",
         "file": "templates/tool/game/fun/backroom.html",
+        "genre": "ホラー",
+        "added": "2025-06-10",
     },
     {
         "slug": "battle_star",
@@ -34,6 +31,8 @@ GAMES = [
         "thumb": "/photo/game/battle_star.png",
         "desc": "星をめぐる宇宙バトルアクション。敵を倒して銀河の覇者を目指せ。",
         "file": "templates/tool/game/fun/battle_star.html",
+        "genre": "アクション",
+        "added": "2025-06-10",
     },
     {
         "slug": "block-blast",
@@ -41,13 +40,8 @@ GAMES = [
         "thumb": "/photo/game/block-blast.jpg",
         "desc": "ブロックを配置してラインを消す爽快パズルゲーム。",
         "file": "templates/tool/game/fun/block-blast.html",
-    },
-    {
-        "slug": "cobb-can-move",
-        "title": "Cobb Can Move",
-        "thumb": "/photo/game/cobb-can-move.png",
-        "desc": "敵だけがレベルアップし続けるホラーゲーム。果たして生き残れるか？",
-        "file": "templates/tool/game/fun/cobb-can-move.html",
+        "genre": "パズル",
+        "added": "2025-06-10",
     },
     {
         "slug": "Count_Master",
@@ -55,6 +49,8 @@ GAMES = [
         "thumb": "/photo/game/Count_Masters.png",
         "desc": "仲間を増やしながら走り、敵を数の力で圧倒するカジュアルバトル。",
         "file": "templates/tool/game/fun/Count_Master.html",
+        "genre": "カジュアル",
+        "added": "2025-06-10",
     },
     {
         "slug": "dyping",
@@ -62,6 +58,8 @@ GAMES = [
         "thumb": "/photo/game/dyping.gif",
         "desc": "世にも奇妙なtyping~ダイピング~",
         "file": "templates/tool/game/fun/dyping.html",
+        "genre": "タイピング",
+        "added": "2025-06-10",
     },
     {
         "slug": "hole-io",
@@ -69,6 +67,8 @@ GAMES = [
         "thumb": "/photo/game/hole.io.webp",
         "desc": "穴を大きくしながら街を丸ごと飲み込む .io ゲーム。制限時間内に最大を目指せ。",
         "file": "templates/tool/game/fun/hole-io.html",
+        "genre": "カジュアル",
+        "added": "2025-06-10",
     },
     {
         "slug": "needy-streamer-overload",
@@ -76,6 +76,8 @@ GAMES = [
         "thumb": "/photo/game/needy-streamer-overload.jpg",
         "desc": "ストレス限界の配信者「あめちゃん」を支える異色のシミュレーション。",
         "file": "templates/tool/game/fun/needy-streamer-overload.html",
+        "genre": "シミュレーション",
+        "added": "2025-06-10",
     },
     {
         "slug": "repo",
@@ -83,6 +85,8 @@ GAMES = [
         "thumb": "/photo/game/repo.png",
         "desc": "リポから物資を回収して帰還するサバイバルシミュレーション。",
         "file": "templates/tool/game/fun/repo.html",
+        "genre": "シミュレーション",
+        "added": "2025-06-10",
     },
     {
         "slug": "run-1",
@@ -90,6 +94,8 @@ GAMES = [
         "thumb": "/photo/game/run-1.webp",
         "desc": "宇宙トンネルをひたすら走り続けるエンドレスパルクールアクション。",
         "file": "templates/tool/game/fun/run-1.html",
+        "genre": "アクション",
+        "added": "2025-06-10",
     },
     {
         "slug": "run-3",
@@ -97,6 +103,8 @@ GAMES = [
         "thumb": "/photo/game/run3.webp",
         "desc": "宇宙の果てまで続くトンネルを疾走する人気エンドレスランナー第3弾。",
         "file": "templates/tool/game/fun/run-3.html",
+        "genre": "アクション",
+        "added": "2025-06-10",
     },
     {
         "slug": "run-3-freezenova",
@@ -104,6 +112,8 @@ GAMES = [
         "thumb": "/photo/game/run-3freezenova.webp",
         "desc": "Freezenova版のRun 3。宇宙トンネルを3Dで駆け抜けろ。",
         "file": "templates/tool/game/fun/run-3-freezenova.html",
+        "genre": "アクション",
+        "added": "2025-06-10",
     },
     {
         "slug": "snow-rider",
@@ -111,6 +121,8 @@ GAMES = [
         "thumb": "/photo/game/snow-rider.webp",
         "desc": "雪山をそりで滑り降りる爽快スノーレースゲーム。障害物を避けながら距離を稼げ。",
         "file": "templates/tool/game/fun/snow-rider.html",
+        "genre": "アクション",
+        "added": "2025-06-10",
     },
     {
         "slug": "snow-rider-3d",
@@ -118,6 +130,8 @@ GAMES = [
         "thumb": "/photo/game/snow-rider-3d.webp",
         "desc": "3Dグラフィックで楽しむスノーライダー。スピード感あふれる雪山ランゲーム。",
         "file": "templates/tool/game/fun/snow-rider-3d.html",
+        "genre": "アクション",
+        "added": "2025-06-10",
     },
     {
         "slug": "steal-a-brainrot",
@@ -125,6 +139,8 @@ GAMES = [
         "thumb": "/photo/game/steal-a-brainrot.jpg",
         "desc": "ブレインロットキャラを盗み合う戦略カジュアルゲーム。素早く動いて相手より多く集めろ。",
         "file": "templates/tool/game/fun/steal-a-brainrot.html",
+        "genre": "カジュアル",
+        "added": "2025-06-10",
     },
     {
         "slug": "steal-brainrot-duel",
@@ -132,6 +148,8 @@ GAMES = [
         "thumb": "/photo/game/steal-brainrot-duel.webp",
         "desc": "1対1のブレインロット対決。相手より素早く奪い取れ！",
         "file": "templates/tool/game/fun/steal-brainrot-duel.html",
+        "genre": "カジュアル",
+        "added": "2025-06-10",
     },
     {
         "slug": "steal-brainrot-heist",
@@ -139,6 +157,8 @@ GAMES = [
         "thumb": "/photo/game/steal-brainrot-heist.webp",
         "desc": "チームで挑むブレインロット強奪作戦。連携プレイで大量ゲットを狙え。",
         "file": "templates/tool/game/fun/steal-brainrot-heist.html",
+        "genre": "カジュアル",
+        "added": "2025-06-10",
     },
     {
         "slug": "super-mario-64",
@@ -146,6 +166,8 @@ GAMES = [
         "thumb": "/photo/game/super-mario-64.webp",
         "desc": "伝説の3Dアクション、ブラウザで遊べるマリオ64。星を集めてクッパを倒せ！",
         "file": "templates/tool/game/fun/super-mario-64.html",
+        "genre": "アクション",
+        "added": "2025-06-10",
     },
     {
         "slug": "tomodachi-collection",
@@ -153,6 +175,26 @@ GAMES = [
         "thumb": "/photo/game/tomodachi-collection.webp",
         "desc": "島でともだちと暮らすほのぼのライフシミュレーション。DSの名作がブラウザで。",
         "file": "templates/tool/game/fun/tomodachi-collection.html",
+        "genre": "シミュレーション",
+        "added": "2025-06-10",
+    },
+    {
+        "slug": "cobb-can-move",
+        "title": "Cobb Can Move",
+        "thumb": "/photo/game/cobb-can-move.png",
+        "desc": "敵だけがレベルアップし続けるホラーゲーム。果たして生き残れるか？",
+        "file": "templates/tool/game/fun/cobb-can-move.html",
+        "genre": "ホラー",
+        "added": "2025-06-12",
+    },
+    {
+        "slug": "choco-quiz",
+        "title": "チョコクイズ",
+        "thumb": "/photo/game/choco-quiz.svg",
+        "desc": "チョコレートの知識を試す本格クイズ！ステージ1〜5＆エンドレスモードで腕試し。",
+        "file": "templates/tool/game/fun/choco-quiz.html",
+        "genre": "クイズ",
+        "added": "2025-06-15",
     },
 ]
 
